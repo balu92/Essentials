@@ -1,52 +1,8 @@
-/*
-var Flags = { "Admin",
-		      "essentials.mute",
-			  "essentials.unmute",
-			  "essentials.teleport",
-			  "essentials.kill",
-			  "essentials.kick",
-			  "essentials.ban",
-			  "essentials.unban",
-			  "essentials.loadout",
-			  "essentials.announce",
-			  "essentials.give.self",
-			  "essentials.give.player",
-			  "essentials.give.*",
-			  "essentials.god",
-			  "essentials.save",
-			  "essentials.reload",
-			  "essentials.instako",
-			  }
-*/
-				  /*"CanMute",
-				  "CanUnmute",
-				  "CanWhiteList",
-				  "CanKill",
-				  "CanKick",
-				  "CanBan",
-				  "CanUnban",
-				  "CanTeleport",
-				  "CanLoadout",
-				  "CanAnnounce",
-				  "CanSpawnItem",
-				  "CanGiveItem",
-				  "CanReload",
-				  "CanSaveAll",
-				  "CanAddAdmin",
-				  "CanDeleteAdmin",
-				  "CanGetFlags",
-				  "CanAddFlags",
-				  "CanUnflag",
-				  "CanInstaKO",
-				  "CanGodMode",
-				  "RCON"
-				  */
-var Permissions =
+var Permissions = {
 	Name:		"Permissions",
 	Author:		"The Magma Essentials Team",
-	Version:	"0.1.2",
+	Version:	"0.1.3",
 	DStable:	"Essential_Permissions",
-	// HTloc:		Magma.Util.GetMagmaFolder() + "Essentials\\" + Permissions.Name + ".eht",
 	Flags:		[ "Admin",
 				  "essentials.mute",
 			      "essentials.unmute",
@@ -64,28 +20,32 @@ var Permissions =
 				  "essentials.save",
 				  "essentials.reload",
 				  "essentials.instako",
-				  "essentials.*",
 				  "essentials.mod",
 				  "essentials.info"
 				],
+	_flags:		[],
+	GetFlags:	function(){
+		var flagnum = parseInt(this.Ini.Get("Flags", "Flags", "count"));
+		for(var i = 0; i < flagnum; i++){
+			var j = i+1;
+			_flags.push(this.Ini.Get("Flags", "Flags", j));
+		}
+		return _flags;
+	},
 	Init:		function(){
-	//	if(Magma.Util.HashtableFromFile(this.HTloc) != undefined) //-> unhandled exception by magma
-	//		return;
-	/*	var error;
-		try { var HT = Magma.Util.HashtableFromFile(this.HTloc);} catch(err){ error = err;}
-		if(error == undefined) return;*/
-	//	Util.ConsoleLog("[color #33d356]Permissions: first time initialisation...", true);
-		if(!Plugin.IniExists("Permissions")){
+		if(!Plugin.IniExists("Flags")){
 			Util.ConsoleLog("[color #33d356]Permissions: first time initialization...", true);
-			var ini = Plugin.CreateIni("Permissions");
-			ini.AddSetting("reserved", "reserved", "reserved");
+			var ini = Plugin.CreateIni("Flags");
+			var count;
+			for(var i = 1; i < (this.Flags.length + 1); i++){
+				ini.AddSetting("Flags", i, this.Flags[i]);
+				count = i;
+			}
+			ini.AddSetting("Flags", "count", count);
 			ini.Save();
 			Util.ConsoleLog("[color #33d356]Permissions: Permissions.ini created successfully", true);
 			DataStore.Add(this.DStable, "reserved", "reserved");
 		}
-		/*var HT = DataStore.GetTable(this.DStable);
-		Magma.Util.HashtableToFile(HT, this.HTloc);
-		Util.ConsoleLog("[color #33d356]Permissions: Permissions.ehs created successfully", true);*/
 	},
 	PlayerFlags: function(Player){
 		// return a string, an array, or just do a player.message of the flags
@@ -103,8 +63,9 @@ var Permissions =
 		return false;
 	},
 	IsValidFlag:function(Flag){
-		for(var i = 0; i < this.Flags.length; i++)
-			if(Data.ToLower(this.Flags[i]) == Data.ToLower(Flag))
+		var flags = this.GetFlags();
+		for(var i = 0; i < this.flags.length; i++)
+			if(Data.ToLower(this.flags[i]) == Data.ToLower(Flag))
 				return true;
 		return false;
 	},
@@ -120,32 +81,32 @@ var Permissions =
 	AddFlag:	function(Player, Flag){
 		Flag = Data.ToLower(Flag);
 		if(!this.IsValidFlag(Flag)){
-			return Flag + " is not a valid flag!";
+			return Flag + " is not a valid flag!"; //false
 		}
 		if(!this.HasFlag(Player, Flag)){
 			if(DataStore.Get(this.DStable, Player.SteamID) != undefined){
 				DataStore.Add(this.DStable, Player.SteamID, DataStore.Get(this.DStable, Player.SteamID) + Flag + "|");
-				this.Ini.Add("Flags", Player.SteamID, this.Ini.Get("Flags", Player.SteamID) + Flag + "|");
-				return Player.Name + " now has " + Flag + " flag";
+				this.Ini.Add("Permissions", "Flags", Player.SteamID, this.Ini.Get("Permissions", "Flags", Player.SteamID) + Flag + "|");
+				return Player.Name + " now has " + Flag + " flag"; //true
 			} else {
 				DataStore.Add(this.DStable, Player.SteamID, "|" + Flag + "|");
-				this.Ini.Add("Flags", Player.SteamID, "|" + Flag + "|");
-				return Player.Name + " now has " + Flag + " flag";
+				this.Ini.Add("Permissions", "Flags", Player.SteamID, "|" + Flag + "|");
+				return Player.Name + " now has " + Flag + " flag"; //true
 			}
 		} else {
-			return Player.Name + " already has " + Flag + " flag!";
+			return Player.Name + " already has " + Flag + " flag!"; //false?
 		}
 	},
 	UnFlag:		function(Player, Flag){
 		Flag = Data.ToLower(Flag);
 		if(!this.IsValidFlag(Flag))
-			return Flag + " is not a valid flag!";
+			return Flag + " is not a valid flag!"; //false
 		if(this.HasFlag(Player, Flag)){
 			DataStore.Add(this.DStable, Player.SteamID, DataStore.Get(this.DStable, Player.SteamID).replace("|" + Flag, ""));
-			this.Ini.Add("Flags", Player.SteamID, this.Ini.Get("Flags", Player.SteamID).replace("|" + Flag, ""));
-			return Player.Name + " does not have " + Flag + " flag anymore.";
+			this.Ini.Add("Permissions", "Flags", Player.SteamID, this.Ini.Get("Permissions", "Flags", Player.SteamID).replace("|" + Flag, ""));
+			return Player.Name + " does not have " + Flag + " flag anymore."; //true
 		} else {
-			return Player.Name + " doesn't have " + Flag + " flag.";
+			return Player.Name + " doesn't have " + Flag + " flag."; //true?
 		}
 	},
 	FlushFlags:	function(){
@@ -153,27 +114,27 @@ var Permissions =
 		Plugin.DeleteLog("Permissions");
 	},
 	Ini:		{
-		Add:		function(tbl_name, key, value){
-			if(!Plugin.IniExists("Permissions")){
-				var ini = Plugin.CreateIni("Permissions");
+		Add:		function(file_name, tbl_name, key, value){
+			if(!Plugin.IniExists(file_name)){
+				var ini = Plugin.CreateIni(file_name);
 				ini.AddSetting(tbl_name, key, value);
 				ini.Save();
 				return;
 			}
-			var ini = Plugin.GetIni("Permissions");
+			var ini = Plugin.GetIni(file_name);
 			ini.AddSetting(tbl_name, key, value);
 			ini.Save();
 		},
-		Get:		function(tbl_name, key){
-			if(Plugin.IniExists("Permissions")){
-				var ini = Plugin.GetIni("Permissions");
+		Get:		function(file_name, tbl_name, key){
+			if(Plugin.IniExists(file_name)){
+				var ini = Plugin.GetIni(file_name);
 				return ini.GetSetting(tbl_name, key);
 			}
-			return;
+			return undefined;
 		},
-		Remove:		function(tbl_name, key){
-			if(Plugin.IniExists("Permissions")){
-				var ini = Plugin.GetIni("Permissions");
+		Remove:		function(file_name, tbl_name, key){
+			if(Plugin.IniExists(file_name)){
+				var ini = Plugin.GetIni(file_name);
 				ini.DeleteSetting(tbl_name, key);
 				ini.Save();
 			}
@@ -186,32 +147,16 @@ var Permissions =
 				this.Add("Flags", keys[i], tbl[keys[i]]);
 		}*/
 	}
-	/*Hashtable:	{ // I think we should use this when its fixed in magma
-		Add:		function(key, value){
-			var HT = Magma.Util.HashtableFromFile(Permissions.HTloc);
-			HT[key] = value;
-			Magma.Util.HashtableToFile(HT, Permissions.HTloc);
-		},
-		Get:		function(key){
-			var HT = Magma.Util.HashtableFromFile(Permissions.HTloc);
-			return HT[key];
-		},
-		ContainsKey:function(key){
-			if(HT[key] != undefined)
-				return true;
-			return false;
-		}
-	}*/
 }
 
 function On_PluginInit(){
 	try{
 		Permissions.Init();
 		Util.ConsoleLog("[color #33d356]Permissions: loaded !", true);
+		UnityEngine.Debug.Log("Essentials:Permission loaded!");
 		Server.Broadcast("Essentials Development Preview Loaded");
 	}catch(err){
-	//	if(err != "Null object can not be converted to a value type." )  // this was a part of my workaround for HashtableFromFile(HT)
-			Plugin.Log("Log_On_PluginInit", err.toString().replace(".", ":") + " " + err.description);
+			Plugin.Log("ERR_On_PluginInit", err.toString().replace(".", ":") + " " + err.description);
 	}
 }
 
@@ -310,7 +255,7 @@ function On_Command(Player, cmd, args){
 				break;
 		}
 	}catch(err){
-		Plugin.Log("Log_On_Command", err.toString().replace(".", ":") + " " + err.description);
+		Plugin.Log("ERR_On_Command", err.toString().replace(".", ":") + " " + err.description);
 	}
 }
 
