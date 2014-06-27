@@ -87,7 +87,7 @@ function ess_messagePlayerByName(sender, targetPlayerName, msg) { //need test
 }
 function ess_argsToText(args) {
     if (args.Length == 1) {
-        return = args[0];
+        return args[0];
     } else {
 		var text;
         for (var l = 0; l < args.Length; l++) {
@@ -101,7 +101,7 @@ function ess_argsToText(args) {
 function ess_ArgsToTextFromTo(args, from, to) { //need test
     if(to > args.Length || from > to) return undefined;
 	if (args.Length == 1) {
-        return = args[0];
+        return args[0];
     } else {
 		var text;
         for (var l = (from - 1); l < to; l++) {
@@ -127,5 +127,5 @@ function ess_ArrayOfWordsToLines(arr, words) { //need test
 		line = undefined;
 		plus += words;
 	}
-	return lines
+	return lines;
 }
