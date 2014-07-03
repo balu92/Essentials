@@ -7,7 +7,7 @@ var Permissions = {
 						["Essentials", 0.01]
 					],
 	DStable:	"Essential_Permissions",
-	Flags:		[ "Admin",
+	Flags:		[ "essentials.admin",
 				  "essentials.mute",
 			      "essentials.unmute",
 				  "essentials.teleport",
@@ -160,13 +160,13 @@ function On_PluginInit(){
 		Permissions.Init();
 		Essentials.RegPlugin(Permissions);
 		if(Permissions.Enabled == undefined){
-			Permissions.Enabled(true);
+			Permissions.Enabled = true;
 		}
 		Util.ConsoleLog("[color #33d356]Permissions: loaded !", true);
 		UnityEngine.Debug.Log("Essentials:Permission loaded!");
 		Server.Broadcast("Essentials Development Preview Loaded");
 	}catch(err){
-			Plugin.Log("ERR_On_PluginInit", err.toString().replace(".", ":") + " " + err.description);
+			Essentials.ErrorHandler("Permissions.On_PluginInit( )", err);
 	}
 }
 
@@ -175,12 +175,12 @@ function On_Command(Player, cmd, args){
 		if(Essentials.Enabled && Permissions.Enabled){
 			switch(cmd){
 				case "addflag":
-					if(Player.Admin){
+					if(Permissions.IsAdmin(Player)){
 						if(args.Length > 1){
 							var argsmin2 = (args.Length -2);
-							var user = Magma.Player.FindByName(ess_argsToTextFromTo(args, 0, argsmin2));
+							var user = Magma.Player.FindByName(Essentials.ArgsToTextFromTo(args, 0, argsmin2));
 							if(user == null){
-								Player.MessageFrom("Essentials", ess_argsToTextFromTo(args, 0, argsmin2) + " is not a valid player name or the player is offline!");
+								Player.MessageFrom("Essentials", Essentials.ArgsToTextFromTo(args, 0, argsmin2) + " is not a valid player name or the player is offline!");
 								return;
 							}
 							var msg = Permissions.AddFlag(user, args[args.Length - 1]);
@@ -189,14 +189,13 @@ function On_Command(Player, cmd, args){
 							Player.MessageFrom("Essentials", "/addflag <playername> <flag>");
 						}
 					}
-					break;
-
+				break;
 				case "unflag":
 					if(args.Length > 1){
 						if(Permissions.HasFlag(Player, "canunflag")){
-							var user = Magma.Player.FindByName(ess_argsToTextFromTo(args, 0, argsmin2));
+							var user = Magma.Player.FindByName(Essentials.ArgsToTextFromTo(args, 0, argsmin2));
 							if(user == null){
-								Player.MessageFrom("Essentials", ess_argsToTextFromTo(args, 0, argsmin2) + " is not a valid player name or the player is offline!");
+								Player.MessageFrom("Essentials", Essentials.ArgsToTextFromTo(args, 0, argsmin2) + " is not a valid player name or the player is offline!");
 								return;
 							}
 							var msg = Permissions.UnFlag(user, args[args.Length - 1]);
@@ -205,61 +204,46 @@ function On_Command(Player, cmd, args){
 							Player.MessageFrom("Essentials", "Valid syntax: /unflag (player) (flag)");
 						}
 					}
-					break;
-
+				break;
 				case "myflags":
 					Player.MessageFrom("Essentials", Permissions.PlayerFlags(Player));
-					break;
-
-				case "flush":
-					Permissions.FlushFlags();
-					break;
-
+				break;
 				case "kick":
 					if(Permissions.HasFlag(Player, "essentials.kick")) {
 						if (args.Length >= 1) {
-							try {
-								var targetPlayer = Magma.Player.FindByName(argsToText(args));
-								ess_kickPlayer(targetPlayer);
-							}
-							catch(err) {
-								Player.MessageFrom("Essentials", "Player not found");
-							}
-						}
-						else {
+							var playaName = Essentials.ArgsToText(args, " ");
+							var targetPlayer = Magma.Player.FindByName(playaName);
+							if(targetPlayer) targetPlayer.Disconnect();
+							else Player.MessageFrom("Essentials", "Player: '" + String(playaName) + "' not found!");
+						} else {
 							Player.MessageFrom("Essentials", "Valid syntax: /kick (player)");
 						}
 					} else {
 						Player.Message("[color #b0171f]Permission denied.");
 					}
-					break;
-
+				break;
 				case "kill":
 					if(Permissions.HasFlag(Player, "essentials.kill")) {
 						if (args.Length >= 1) {
-								var targetPlayer = Magma.Player.FindByName(ess_argsToText(args));
-							try {
-								ess_killPlayer(targetPlayer);
-							}
-							catch(err) {
-								Player.MessageFrom("Essentials", "Player not found");
-							}
-						}
-						else {
-							Player.MessageFrom("Essentials", "Valid syntax: /kill (player)");
+							var playaName = Essentials.ArgsToText(args, " ");
+							var targetPlayer = Magma.Player.FindByName(playaName);
+							if(targetPlayer) targetPlayer.Kill();
+							else Player.MessageFrom("Essentials", "Player: '" + String(playaName) + "' not found!");
+						} else {
+							Player.MessageFrom("Essentials", "Valid syntax: /kill (player_name)");
 						}
 					} else {
 						Player.Message("[color #b0171f]Permission denied.");
 					}
-					break;
+				break;
 			}
 		}
 	}catch(err){
-		Plugin.Log("ERR_On_Command", err.toString().replace(".", ":") + " " + err.description);
+		Essentials.ErrorHandler("Permissions.On_Command( Magma.Player{" + Player.Name + "} , " + cmd + ", args{" + Essentials.ArgsToText(args, ", ") + "} )", err);
 	}
 }
 
 
-function On_PlayerConnected(Player) {
-	ess_showMOTD(Player);
+function On_PlayerConnected(Player) { // this should be in the core !!
+	Essentials.ShowMOTD(Player);
 }
